@@ -13,7 +13,36 @@
   border-radius: 6px;
 }
 
+.results-dialog {
+  width: min(960px, calc(100vw - 32px));
+  height: min(720px, calc(100dvh - 32px));
+  max-width: none;
+  max-height: none;
+  padding: 0;
+}
+.results-dialog[open] { display: flex; flex-direction: column; }
+.results-heading, .results-actions { display: flex; align-items: center; padding: 16px 20px; }
+.results-heading { justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--line); }
+.results-heading h2 { margin: 0 0 3px; }
+.results-heading p { margin: 0; color: var(--muted); font-size: 12px; }
+.results-actions { justify-content: flex-end; border-top: 1px solid var(--line); }
+.results-scroll { min-height: 0; flex: 1; overflow: auto; }
+.results-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px; }
+.results-table th, .results-table td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; white-space: pre-wrap; }
+.results-table th { position: sticky; top: 0; background: #f6f8fb; z-index: 1; font-weight: 700; }
+.results-table th:nth-child(1) { width: 28%; }
+.results-table th:nth-child(2) { width: 22%; }
+.results-table tr:nth-child(even) td { background: #fafbfd; }
+.results-empty { color: var(--muted); text-align: center !important; padding: 36px 14px !important; }
+
 @media (max-width: 800px) {
   /* The panels become overlays; keep a rail on either side of the preview. */
   #workspace:not(.focus-mode) .browser-panel { margin: 0 var(--rail); }
+}
+
+@media (max-width: 600px) {
+  .results-heading, .results-actions { padding: 12px; }
+  .results-table th, .results-table td { padding: 8px; font-size: 11px; }
+  .results-table th:nth-child(1) { width: 34%; }
+  .results-table th:nth-child(2) { width: 25%; }
 }

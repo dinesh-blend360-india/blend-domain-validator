@@ -4,6 +4,6 @@
   "type": "module",
   "scripts": {
     "start": "node tools/serve.mjs",
-    "test": "node --test tests/core.test.mjs tests/static.test.mjs"
+    "test": "node --test tests/core.test.mjs tests/results.test.mjs tests/static.test.mjs"
   }
 }

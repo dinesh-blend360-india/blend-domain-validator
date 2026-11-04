@@ -2,9 +2,10 @@ import { prepareImport, createRecord } from './domainManager.js';
 import { isReviewed, requiresComment, statistics } from './validation.js';
 import { emptySession, loadSession, saveSession, clearSession, validateSession } from './storage.js';
 import { toTSV, toCSV, downloadText, datedFilename } from './export.js';
+import { renderResults } from './results.js';
 
 const $ = id => document.getElementById(id);
-const elements = Object.fromEntries(['workspace','left-panel','right-panel','left-toggle','right-toggle','domains-toggle','left-resizer','right-resizer','previous','next','position','jump','stat-total','stat-visited','stat-unvisited','stat-relevant','stat-reviewed','fullscreen','domain-input','keep-duplicates','append','replace','import-message','list-count','search','filter','domain-list','copy','csv','backup','restore','restore-file','reset','address-text','open-external','hint-external','load-status','preview','preview-overlay','frame-hint','empty-import','import-details','current-domain','review-badge','label','comment','required-marker','comment-optional','comment-help','save-status','save-review','validation-message','confirm-dialog','dialog-title','dialog-message','dialog-confirm','dialog-cancel','toast'].map(id => [id.replaceAll('-', '_'), $(id)]));
+const elements = Object.fromEntries(['workspace','left-panel','right-panel','left-toggle','right-toggle','domains-toggle','left-resizer','right-resizer','previous','next','position','jump','stat-total','stat-visited','stat-unvisited','stat-relevant','stat-reviewed','view-results','results-dialog','results-summary','results-body','results-close','results-close-icon','fullscreen','domain-input','keep-duplicates','append','replace','import-message','list-count','search','filter','domain-list','copy','csv','backup','restore','restore-file','reset','address-text','open-external','hint-external','load-status','preview','preview-overlay','frame-hint','empty-import','import-details','current-domain','review-badge','label','comment','required-marker','comment-optional','comment-help','save-status','save-review','validation-message','confirm-dialog','dialog-title','dialog-message','dialog-confirm','dialog-cancel','toast'].map(id => [id.replaceAll('-', '_'), $(id)]));
 const stored = loadSession();
 let session = stored.session;
 let locked = Boolean(stored.corrupt);
@@ -34,6 +35,9 @@ function closeDialog(result) { if (!dialogResolver) return; const resolve = dial
 elements.dialog_confirm.addEventListener('click', () => closeDialog(true));
 elements.dialog_cancel.addEventListener('click', () => closeDialog(false));
 elements.confirm_dialog.addEventListener('cancel', event => { event.preventDefault(); closeDialog(false); });
+elements.view_results.addEventListener('click', () => { renderResults(session.domains, elements.results_body, elements.results_summary); elements.results_dialog.showModal(); });
+for (const button of [elements.results_close, elements.results_close_icon]) button.addEventListener('click', () => elements.results_dialog.close());
+elements.results_dialog.addEventListener('close', () => elements.view_results.focus());
 
 function fitPanelWidths() {
   if (window.innerWidth <= 800) {
@@ -208,6 +212,7 @@ elements.restore_file.addEventListener('change', async () => {
 elements.reset.addEventListener('click', async () => { const yes = await confirmAction('Clear all session data?', 'This removes the domain list, labels, comments, and visit history from this browser. Export CSV or a JSON backup first if you need your work.', 'Clear all data'); if (!yes) return; try { clearSession(); session = emptySession(session.ui); locked = false; renderAll(true); setMessage(elements.import_message, 'Session cleared. Paste domains to begin.', 'success'); showToast('Session cleared.'); } catch (error) { showToast(`Could not clear session: ${error.message}`); } });
 
 document.addEventListener('keydown', event => {
+  if (elements.results_dialog.open || elements.confirm_dialog.open) return;
   if (event.ctrlKey && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'f') { event.preventDefault(); if (focusMode) { focusMode = false; applyPanelState(); } if (!session.ui.leftOpen) togglePanel('left'); elements.search.focus(); elements.search.select(); return; }
   if (event.ctrlKey && event.key === 'Enter') { event.preventDefault(); saveReview(); return; }
   const typing = event.target.matches('input,textarea,select,[contenteditable=true]'); if (typing || event.ctrlKey || event.altKey || event.metaKey || elements.confirm_dialog.open) return;

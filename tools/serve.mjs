@@ -9,7 +9,7 @@ const files = new Map([
   ['/css/styles.css', ['css/styles.css', 'text/css; charset=utf-8']],
   ['/css/layout.css', ['css/layout.css', 'text/css; charset=utf-8']],
   ['/assets/blend-mark.webp', ['assets/blend-mark.webp', 'image/webp']],
-  ...['app', 'domainManager', 'validation', 'storage', 'export'].map(name => [`/js/${name}.js`, [`js/${name}.js`, 'text/javascript; charset=utf-8']])
+  ...['app', 'domainManager', 'validation', 'storage', 'export', 'results'].map(name => [`/js/${name}.js`, [`js/${name}.js`, 'text/javascript; charset=utf-8']])
 ]);
 const port = Number(process.env.PORT || 5500);
 createServer(async (request, response) => {

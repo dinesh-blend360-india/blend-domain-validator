@@ -26,6 +26,8 @@ Open **http://localhost:5500** in current Chrome or Edge. Keep using the same ad
 4. Select a validation label on the right. **Relevant** needs no comment. Every other label needs a nonblank comment to count as reviewed. Changes save automatically to this browser's Local Storage. The save indicator confirms success or reports failure.
 5. Search and filter the domain list without changing its original order. The header tracks Total, Visited, Not visited, Relevant, and Reviewed. Relevant counts only the exact Relevant label; Reviewed counts completed classifications.
 
+Click **Results** in the header to preview every Domain, Label, and Comment in import order. Close the preview with its Close button, × button, or Escape. Pending records appear with blank label and comment cells.
+
 The blue list item is the current domain. Previously visited domains are green, unvisited ones are grey, and a checkmark indicates a completed review. Both sidebars can collapse or resize independently. The header menu button always opens or closes the domain list; the narrow panel rails also toggle their panels. **Focus view** hides both panels until you exit it. On narrow screens, panels appear as overlays.
 
 ## Results and session safety
@@ -62,8 +64,10 @@ js/domainManager.js        Input parsing and duplicate detection
 js/validation.js           Review rules and statistics
 js/storage.js              Versioned Local Storage and backup validation
 js/export.js               Clipboard table and file exports
+js/results.js              On-screen results table
 tools/serve.mjs            Optional local static server
 tests/core.test.mjs        Dependency-free core tests
+tests/results.test.mjs     Results table tests
 ```
 
-Run the tests with `node --test tests/core.test.mjs tests/static.test.mjs`. No package installation is required. `package.json` only enables ES modules and provides development scripts.
+Run the tests with `node --test tests/core.test.mjs tests/results.test.mjs tests/static.test.mjs`. No package installation is required. `package.json` only enables ES modules and provides development scripts.
