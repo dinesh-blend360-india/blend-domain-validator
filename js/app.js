@@ -141,10 +141,18 @@ function browse(record) {
   clearTimeout(frameTimer);
   if (!record) { elements.preview.removeAttribute('src'); elements.preview_overlay.hidden = false; elements.frame_hint.hidden = true; elements.address_text.textContent = 'No website selected'; elements.load_status.textContent = ''; elements.open_external.href = '#'; elements.hint_external.href = '#'; elements.open_external.setAttribute('aria-disabled','true'); return; }
   elements.preview_overlay.hidden = true; elements.address_text.textContent = record.url; elements.open_external.href = record.url; elements.hint_external.href = record.url; elements.open_external.setAttribute('aria-disabled','false'); elements.load_status.textContent = 'Loading…'; elements.frame_hint.hidden = false;
+  elements.preview.dataset.url = record.url;
   elements.preview.src = record.url;
-  frameTimer = setTimeout(() => { elements.load_status.textContent = 'Check preview or open in new tab'; }, 12000);
+  frameTimer = setTimeout(() => { elements.load_status.textContent = 'Still loading? Check preview or open in new tab'; }, 12000);
 }
-elements.preview.addEventListener('load', () => { if (!current()) return; clearTimeout(frameTimer); elements.load_status.textContent = 'Preview opened or blocked'; });
+// Browsers fire `load` even when a site refuses embedding, and a cross-origin frame cannot be inspected,
+// so this only confirms the frame finished loading. Ignore loads left over from a previously selected domain.
+elements.preview.addEventListener('load', () => {
+  const record = current();
+  if (!record || elements.preview.dataset.url !== record.url) return;
+  clearTimeout(frameTimer);
+  elements.load_status.textContent = 'Loaded in preview · if blank or refused, use Open in new tab';
+});
 function renderAll(loadFrame = false) { elements.append.disabled = elements.replace.disabled = locked; applyPanelState(); renderStats(); renderJump(); renderList(); renderNavigation(); renderValidation(); if (loadFrame) browse(current()); }
 function selectDomain(id, { loadFrame = true } = {}) {
   const record = session.domains.find(d => d.id === id); if (!record) return;
