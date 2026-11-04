@@ -35,7 +35,27 @@ elements.dialog_confirm.addEventListener('click', () => closeDialog(true));
 elements.dialog_cancel.addEventListener('click', () => closeDialog(false));
 elements.confirm_dialog.addEventListener('cancel', event => { event.preventDefault(); closeDialog(false); });
 
+function fitPanelWidths() {
+  if (window.innerWidth <= 800) {
+    if (session.ui.leftOpen && session.ui.rightOpen) session.ui.rightOpen = false;
+    return;
+  }
+  const available = window.innerWidth - 290;
+  const left = session.ui.leftOpen ? session.ui.leftWidth : 34;
+  const right = session.ui.rightOpen ? session.ui.rightWidth : 34;
+  const overflow = left + right - available;
+  if (overflow <= 0) return;
+  if (session.ui.leftOpen) session.ui.leftWidth = Math.max(220, session.ui.leftWidth - overflow);
+  const remaining = (session.ui.leftOpen ? session.ui.leftWidth : 34) + right - available;
+  if (remaining > 0 && session.ui.rightOpen) session.ui.rightWidth = Math.max(240, session.ui.rightWidth - remaining);
+}
+function maxPanelWidth(side) {
+  const other = side === 'left' ? 'right' : 'left';
+  const otherWidth = session.ui[`${other}Open`] ? session.ui[`${other}Width`] : 34;
+  return Math.max(side === 'left' ? 220 : 240, Math.min(500, window.innerWidth - otherWidth - 290));
+}
 function applyPanelState() {
+  fitPanelWidths();
   const { leftOpen, rightOpen, leftWidth, rightWidth } = session.ui;
   document.documentElement.style.setProperty('--left', `${leftOpen ? leftWidth : 34}px`);
   document.documentElement.style.setProperty('--right', `${rightOpen ? rightWidth : 34}px`);
@@ -44,11 +64,13 @@ function applyPanelState() {
   elements.workspace.classList.toggle('focus-mode', focusMode);
   elements.left_panel.classList.toggle('collapsed', !leftOpen);
   elements.right_panel.classList.toggle('collapsed', !rightOpen);
-  elements.left_toggle.setAttribute('aria-label', leftOpen ? 'Collapse domain list' : 'Expand domain list');
-  elements.right_toggle.setAttribute('aria-label', rightOpen ? 'Collapse validation panel' : 'Expand validation panel');
+  for (const [toggle, open, name] of [[elements.left_toggle, leftOpen, 'domain list'], [elements.right_toggle, rightOpen, 'validation panel']]) {
+    const action = `${open ? 'Collapse' : 'Expand'} ${name}`;
+    toggle.setAttribute('aria-label', action); toggle.setAttribute('aria-expanded', String(open)); toggle.title = action;
+  }
   elements.fullscreen.textContent = focusMode ? 'Exit focus view' : 'Focus view';
 }
-function togglePanel(side) { if (focusMode) focusMode = false; const key = side === 'left' ? 'leftOpen' : 'rightOpen'; session.ui[key] = !session.ui[key]; applyPanelState(); persist(); }
+function togglePanel(side) { if (focusMode) focusMode = false; const key = side === 'left' ? 'leftOpen' : 'rightOpen'; session.ui[key] = !session.ui[key]; if (window.innerWidth <= 800 && session.ui[key]) session.ui[side === 'left' ? 'rightOpen' : 'leftOpen'] = false; applyPanelState(); persist(); }
 elements.left_toggle.addEventListener('click', () => togglePanel('left'));
 elements.right_toggle.addEventListener('click', () => togglePanel('right'));
 elements.fullscreen.addEventListener('click', () => { focusMode = !focusMode; applyPanelState(); });
@@ -57,13 +79,14 @@ function setupResizer(node, side) {
     if (event.button !== 0) return;
     node.setPointerCapture(event.pointerId); node.classList.add('dragging');
     const start = event.clientX, initial = session.ui[`${side}Width`];
-    function move(e) { const change = side === 'left' ? e.clientX - start : start - e.clientX; const max = Math.min(500, Math.max(240, window.innerWidth - 400)); session.ui[`${side}Width`] = Math.max(side === 'left' ? 220 : 240, Math.min(max, initial + change)); applyPanelState(); }
+    function move(e) { const change = side === 'left' ? e.clientX - start : start - e.clientX; session.ui[`${side}Width`] = Math.max(side === 'left' ? 220 : 240, Math.min(maxPanelWidth(side), initial + change)); applyPanelState(); }
     function end() { node.removeEventListener('pointermove', move); node.removeEventListener('pointerup', end); node.removeEventListener('pointercancel', end); node.classList.remove('dragging'); persist(); }
     node.addEventListener('pointermove', move); node.addEventListener('pointerup', end); node.addEventListener('pointercancel', end);
   });
-  node.addEventListener('keydown', event => { if (!['ArrowLeft','ArrowRight'].includes(event.key)) return; event.preventDefault(); const delta = (event.key === 'ArrowRight' ? 10 : -10) * (side === 'left' ? 1 : -1); session.ui[`${side}Width`] = Math.max(side === 'left' ? 220 : 240, Math.min(500, session.ui[`${side}Width`] + delta)); applyPanelState(); persist(); });
+  node.addEventListener('keydown', event => { if (!['ArrowLeft','ArrowRight'].includes(event.key)) return; event.preventDefault(); const delta = (event.key === 'ArrowRight' ? 10 : -10) * (side === 'left' ? 1 : -1); session.ui[`${side}Width`] = Math.max(side === 'left' ? 220 : 240, Math.min(maxPanelWidth(side), session.ui[`${side}Width`] + delta)); applyPanelState(); persist(); });
 }
 setupResizer(elements.left_resizer, 'left'); setupResizer(elements.right_resizer, 'right');
+window.addEventListener('resize', applyPanelState);
 
 function renderStats() { const stats = statistics(session.domains); for (const key of ['total','visited','unvisited','relevant','reviewed']) elements[`stat_${key}`].textContent = stats[key]; elements.list_count.textContent = `${stats.total} record${stats.total === 1 ? '' : 's'}`; }
 function filterMatches(record) { const filter = elements.filter.value; if (!record.hostname.includes(elements.search.value.trim().toLowerCase())) return false; if (filter === 'all') return true; if (filter === 'unvisited') return !record.visited; if (filter === 'visited') return record.visited; if (filter === 'reviewed') return isReviewed(record); if (filter === 'unreviewed') return !isReviewed(record); return record.label === filter; }

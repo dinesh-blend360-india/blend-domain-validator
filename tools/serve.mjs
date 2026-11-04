@@ -7,6 +7,7 @@ const files = new Map([
   ['/', ['index.html', 'text/html; charset=utf-8']],
   ['/index.html', ['index.html', 'text/html; charset=utf-8']],
   ['/css/styles.css', ['css/styles.css', 'text/css; charset=utf-8']],
+  ['/css/layout.css', ['css/layout.css', 'text/css; charset=utf-8']],
   ...['app', 'domainManager', 'validation', 'storage', 'export'].map(name => [`/js/${name}.js`, [`js/${name}.js`, 'text/javascript; charset=utf-8']])
 ]);
 const port = Number(process.env.PORT || 5500);

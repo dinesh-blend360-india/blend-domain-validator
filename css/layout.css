@@ -1,0 +1,11 @@
+/* Keep each region in its own track when a divider or sidebar is hidden. */
+.left-panel { grid-column: 1; }
+#left-resizer { grid-column: 2; }
+.browser-panel { grid-column: 3; }
+#right-resizer { grid-column: 4; }
+.right-panel { grid-column: 5; }
+
+@media (max-width: 800px) {
+  /* The panels become overlays; keep a rail on either side of the preview. */
+  #workspace:not(.focus-mode) .browser-panel { margin: 0 var(--rail); }
+}

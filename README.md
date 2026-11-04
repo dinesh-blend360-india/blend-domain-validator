@@ -54,7 +54,8 @@ The center iframe loads only the current site. Some sites block embedding with `
 
 ```text
 index.html                 Application structure and accessible controls
-css/styles.css             Fixed viewport layout and styling
+css/styles.css             Fixed viewport styling
+css/layout.css             Stable panel placement and narrow-screen layout
 js/app.js                  UI state, interactions, and iframe browsing
 js/domainManager.js        Input parsing and duplicate detection
 js/validation.js           Review rules and statistics
