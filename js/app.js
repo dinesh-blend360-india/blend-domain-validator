@@ -194,7 +194,7 @@ elements.save_review.addEventListener('click', saveReview);
 
 elements.copy.addEventListener('click', async () => { try { await navigator.clipboard.writeText(toTSV(session.domains)); showToast('Results copied with Domain, Label, Comment columns.'); } catch { showToast('Clipboard access failed. Use Download CSV instead.'); } });
 elements.csv.addEventListener('click', () => { downloadText(toCSV(session.domains), 'text/csv;charset=utf-8', datedFilename('domain-validation', 'csv')); showToast('CSV download started.'); });
-elements.backup.addEventListener('click', () => { downloadText(JSON.stringify(session, null, 2), 'application/json', datedFilename('domain-validator-backup', 'json')); showToast('Session backup download started.'); });
+elements.backup.addEventListener('click', () => { downloadText(JSON.stringify(session, null, 2), 'application/json', datedFilename('blend-domain-validator-backup', 'json')); showToast('Session backup download started.'); });
 elements.restore.addEventListener('click', () => elements.restore_file.click());
 elements.restore_file.addEventListener('change', async () => {
   const file = elements.restore_file.files?.[0]; elements.restore_file.value = ''; if (!file) return;

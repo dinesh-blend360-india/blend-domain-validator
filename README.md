@@ -1,6 +1,6 @@
-# Domain Validator
+# Blend Domain Validator
 
-A desktop-first workspace for manually classifying websites from a domain list. It runs entirely in your browser. There is no account, database, remote API, or application backend.
+A desktop-first workspace for manually classifying websites from a domain list. It runs entirely in your browser. There is no account, database, remote API, or application backend. The header uses the [Blend mark shown by its rebrand agency](https://www.outliant.com/case-studies/blend360).
 
 ## Start on Windows
 
@@ -56,6 +56,7 @@ The center iframe loads only the current site. Some sites block embedding with `
 index.html                 Application structure and accessible controls
 css/styles.css             Fixed viewport styling
 css/layout.css             Stable panel placement and narrow-screen layout
+assets/blend-mark.webp      Bundled Blend logo mark
 js/app.js                  UI state, interactions, and iframe browsing
 js/domainManager.js        Input parsing and duplicate detection
 js/validation.js           Review rules and statistics

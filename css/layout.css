@@ -6,6 +6,12 @@
 .right-panel { grid-column: 5; }
 .header-menu { flex: none; }
 .rail-toggle { font-size: 24px; line-height: 1; }
+.brand-mark {
+  width: 32px;
+  height: 32px;
+  background: #082f52 url('../assets/blend-mark.webp') center / 110px auto no-repeat;
+  border-radius: 6px;
+}
 
 @media (max-width: 800px) {
   /* The panels become overlays; keep a rail on either side of the preview. */

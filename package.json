@@ -1,4 +1,5 @@
 {
+  "name": "blend-domain-validator",
   "private": true,
   "type": "module",
   "scripts": {
