@@ -25,7 +25,8 @@
 .results-heading { justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--line); }
 .results-heading h2 { margin: 0 0 3px; }
 .results-heading p { margin: 0; color: var(--muted); font-size: 12px; }
-.results-actions { justify-content: flex-end; border-top: 1px solid var(--line); }
+.results-actions { justify-content: flex-end; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--line); }
+.results-actions #results-close { margin-left: auto; }
 .results-scroll { min-height: 0; flex: 1; overflow: auto; }
 .results-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px; }
 .results-table th, .results-table td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; white-space: pre-wrap; }

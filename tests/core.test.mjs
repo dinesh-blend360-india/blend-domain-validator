@@ -41,6 +41,7 @@ test('CSV and TSV retain order and escape quotes, tabs, and line breaks', () => 
   const rows = [{ hostname: 'one.com', label: 'Relevant', comment: 'A, "quoted"\nline' }, { hostname: 'two.com', label: '', comment: 'tab\there' }];
   assert.equal(toCSV(rows), '\ufeffDomain,Label,Comment\r\none.com,Relevant,"A, ""quoted""\nline"\r\ntwo.com,,tab\there');
   assert.equal(toTSV(rows), 'Domain\tLabel\tComment\r\none.com\tRelevant\t"A, ""quoted""\nline"\r\ntwo.com\t\t"tab\there"');
+  assert.equal(toTSV(rows, false), 'one.com\tRelevant\t"A, ""quoted""\nline"\r\ntwo.com\t\t"tab\there"');
 });
 
 test('storage round-trip, corrupted JSON, and backup validation', () => {

@@ -5,7 +5,7 @@ import { toTSV, toCSV, downloadText, datedFilename } from './export.js';
 import { renderResults } from './results.js';
 
 const $ = id => document.getElementById(id);
-const elements = Object.fromEntries(['workspace','left-panel','right-panel','left-toggle','right-toggle','domains-toggle','left-resizer','right-resizer','previous','next','position','jump','stat-total','stat-visited','stat-unvisited','stat-relevant','stat-reviewed','view-results','results-dialog','results-summary','results-body','results-close','results-close-icon','fullscreen','domain-input','keep-duplicates','append','replace','import-message','list-count','search','filter','domain-list','copy','csv','backup','restore','restore-file','reset','address-text','open-external','hint-external','load-status','preview','preview-overlay','frame-hint','empty-import','import-details','current-domain','review-badge','label','comment','required-marker','comment-optional','comment-help','save-status','save-review','validation-message','confirm-dialog','dialog-title','dialog-message','dialog-confirm','dialog-cancel','toast'].map(id => [id.replaceAll('-', '_'), $(id)]));
+const elements = Object.fromEntries(['workspace','left-panel','right-panel','left-toggle','right-toggle','domains-toggle','left-resizer','right-resizer','previous','next','position','jump','stat-total','stat-visited','stat-unvisited','stat-relevant','stat-reviewed','view-results','results-dialog','results-summary','results-body','results-copy-header','results-copy-no-header','results-download','results-close','results-close-icon','fullscreen','domain-input','keep-duplicates','append','replace','import-message','list-count','search','filter','domain-list','copy','csv','backup','restore','restore-file','reset','address-text','open-external','hint-external','load-status','preview','preview-overlay','frame-hint','empty-import','import-details','current-domain','review-badge','label','comment','required-marker','comment-optional','comment-help','save-status','save-review','validation-message','confirm-dialog','dialog-title','dialog-message','dialog-confirm','dialog-cancel','toast'].map(id => [id.replaceAll('-', '_'), $(id)]));
 const stored = loadSession();
 let session = stored.session;
 let locked = Boolean(stored.corrupt);
@@ -196,8 +196,13 @@ elements.comment.addEventListener('input', () => { updateCurrentReview(); setMes
 function saveReview() { const record = current(); if (!record || locked) return; const saved = updateCurrentReview(); if (!saved) { setMessage(elements.validation_message, 'Save failed. Export a backup to protect this review.', 'error'); return; } if (isReviewed(record)) { setMessage(elements.validation_message, 'Review complete and saved.', 'success'); showToast('Review saved.'); } else { setMessage(elements.validation_message, record.label ? 'Add a comment to complete this review.' : 'Select a validation label to complete this review.', 'error'); if (record.label) elements.comment.focus(); else elements.label.focus(); } }
 elements.save_review.addEventListener('click', saveReview);
 
-elements.copy.addEventListener('click', async () => { try { await navigator.clipboard.writeText(toTSV(session.domains)); showToast('Results copied with Domain, Label, Comment columns.'); } catch { showToast('Clipboard access failed. Use Download CSV instead.'); } });
-elements.csv.addEventListener('click', () => { downloadText(toCSV(session.domains), 'text/csv;charset=utf-8', datedFilename('domain-validation', 'csv')); showToast('CSV download started.'); });
+async function copyResults(includeHeader) { try { await navigator.clipboard.writeText(toTSV(session.domains, includeHeader)); showToast(`Results copied ${includeHeader ? 'with' : 'without'} header.`); } catch { showToast('Clipboard access failed. Use Download CSV instead.'); } }
+function downloadResults() { downloadText(toCSV(session.domains), 'text/csv;charset=utf-8', datedFilename('domain-validation', 'csv')); showToast('CSV download started.'); }
+elements.copy.addEventListener('click', () => copyResults(true));
+elements.results_copy_header.addEventListener('click', () => copyResults(true));
+elements.results_copy_no_header.addEventListener('click', () => copyResults(false));
+elements.csv.addEventListener('click', downloadResults);
+elements.results_download.addEventListener('click', downloadResults);
 elements.backup.addEventListener('click', () => { downloadText(JSON.stringify(session, null, 2), 'application/json', datedFilename('blend-domain-validator-backup', 'json')); showToast('Session backup download started.'); });
 elements.restore.addEventListener('click', () => elements.restore_file.click());
 elements.restore_file.addEventListener('change', async () => {
