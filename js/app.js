@@ -4,7 +4,7 @@ import { emptySession, loadSession, saveSession, clearSession, validateSession }
 import { toTSV, toCSV, downloadText, datedFilename } from './export.js';
 
 const $ = id => document.getElementById(id);
-const elements = Object.fromEntries(['workspace','left-panel','right-panel','left-toggle','right-toggle','left-resizer','right-resizer','previous','next','position','jump','stat-total','stat-visited','stat-unvisited','stat-relevant','stat-reviewed','fullscreen','domain-input','keep-duplicates','append','replace','import-message','list-count','search','filter','domain-list','copy','csv','backup','restore','restore-file','reset','address-text','open-external','hint-external','load-status','preview','preview-overlay','frame-hint','empty-import','import-details','current-domain','review-badge','label','comment','required-marker','comment-optional','comment-help','save-status','save-review','validation-message','confirm-dialog','dialog-title','dialog-message','dialog-confirm','dialog-cancel','toast'].map(id => [id.replaceAll('-', '_'), $(id)]));
+const elements = Object.fromEntries(['workspace','left-panel','right-panel','left-toggle','right-toggle','domains-toggle','left-resizer','right-resizer','previous','next','position','jump','stat-total','stat-visited','stat-unvisited','stat-relevant','stat-reviewed','fullscreen','domain-input','keep-duplicates','append','replace','import-message','list-count','search','filter','domain-list','copy','csv','backup','restore','restore-file','reset','address-text','open-external','hint-external','load-status','preview','preview-overlay','frame-hint','empty-import','import-details','current-domain','review-badge','label','comment','required-marker','comment-optional','comment-help','save-status','save-review','validation-message','confirm-dialog','dialog-title','dialog-message','dialog-confirm','dialog-cancel','toast'].map(id => [id.replaceAll('-', '_'), $(id)]));
 const stored = loadSession();
 let session = stored.session;
 let locked = Boolean(stored.corrupt);
@@ -64,14 +64,18 @@ function applyPanelState() {
   elements.workspace.classList.toggle('focus-mode', focusMode);
   elements.left_panel.classList.toggle('collapsed', !leftOpen);
   elements.right_panel.classList.toggle('collapsed', !rightOpen);
-  for (const [toggle, open, name] of [[elements.left_toggle, leftOpen, 'domain list'], [elements.right_toggle, rightOpen, 'validation panel']]) {
-    const action = `${open ? 'Collapse' : 'Expand'} ${name}`;
-    toggle.setAttribute('aria-label', action); toggle.setAttribute('aria-expanded', String(open)); toggle.title = action;
+  for (const [toggle, open, name] of [[elements.left_toggle, leftOpen, 'domain list'], [elements.domains_toggle, leftOpen, 'domain list'], [elements.right_toggle, rightOpen, 'validation panel']]) {
+    const visible = open && !focusMode;
+    const action = `${visible ? 'Collapse' : 'Expand'} ${name}`;
+    toggle.setAttribute('aria-label', action); toggle.setAttribute('aria-expanded', String(visible)); toggle.title = action;
   }
+  elements.left_toggle.textContent = leftOpen ? '‹' : '›';
+  elements.right_toggle.textContent = rightOpen ? '›' : '‹';
   elements.fullscreen.textContent = focusMode ? 'Exit focus view' : 'Focus view';
 }
-function togglePanel(side) { if (focusMode) focusMode = false; const key = side === 'left' ? 'leftOpen' : 'rightOpen'; session.ui[key] = !session.ui[key]; if (window.innerWidth <= 800 && session.ui[key]) session.ui[side === 'left' ? 'rightOpen' : 'leftOpen'] = false; applyPanelState(); persist(); }
+function togglePanel(side) { const key = side === 'left' ? 'leftOpen' : 'rightOpen'; if (focusMode) { focusMode = false; session.ui[key] = true; } else session.ui[key] = !session.ui[key]; if (window.innerWidth <= 800 && session.ui[key]) session.ui[side === 'left' ? 'rightOpen' : 'leftOpen'] = false; applyPanelState(); persist(); }
 elements.left_toggle.addEventListener('click', () => togglePanel('left'));
+elements.domains_toggle.addEventListener('click', () => togglePanel('left'));
 elements.right_toggle.addEventListener('click', () => togglePanel('right'));
 elements.fullscreen.addEventListener('click', () => { focusMode = !focusMode; applyPanelState(); });
 function setupResizer(node, side) {
@@ -136,7 +140,7 @@ function browse(record) {
   elements.preview.src = record.url;
   frameTimer = setTimeout(() => { elements.load_status.textContent = 'Check preview or open in new tab'; }, 12000);
 }
-elements.preview.addEventListener('load', () => { if (!current()) return; clearTimeout(frameTimer); elements.load_status.textContent = 'Preview navigation finished'; });
+elements.preview.addEventListener('load', () => { if (!current()) return; clearTimeout(frameTimer); elements.load_status.textContent = 'Preview opened or blocked'; });
 function renderAll(loadFrame = false) { elements.append.disabled = elements.replace.disabled = locked; applyPanelState(); renderStats(); renderJump(); renderList(); renderNavigation(); renderValidation(); if (loadFrame) browse(current()); }
 function selectDomain(id, { loadFrame = true } = {}) {
   const record = session.domains.find(d => d.id === id); if (!record) return;

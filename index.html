@@ -11,6 +11,7 @@
 <body>
   <div class="app-shell" id="app">
     <header class="topbar">
+      <button id="domains-toggle" class="icon-button header-menu" aria-label="Collapse domain list" aria-controls="left-content" aria-expanded="true" title="Collapse domain list">☰</button>
       <div class="brand"><span class="brand-mark" aria-hidden="true">◇</span><span>Domain Validator</span></div>
       <div class="top-nav" aria-label="Domain navigation">
         <button id="previous" class="icon-button" title="Previous domain (←)" aria-label="Previous domain">←</button>
@@ -54,7 +55,7 @@
 
       <main class="browser-panel" aria-label="Website preview">
         <div class="browser-toolbar"><div class="address"><span class="address-icon" aria-hidden="true">↗</span><span id="address-text">No website selected</span></div><span id="load-status" class="load-status" role="status"></span><a id="open-external" class="secondary-button external-link" href="#" target="_blank" rel="noopener noreferrer" aria-disabled="true">Open in new tab ↗</a></div>
-        <div class="preview-area"><iframe id="preview" title="Selected website preview" referrerpolicy="no-referrer"></iframe><div id="preview-overlay" class="preview-overlay"><div class="empty-icon" aria-hidden="true">◎</div><h2>Your validation workspace</h2><p>Import domains to start reviewing websites.</p><button id="empty-import" class="primary-button">Import domains</button></div><div id="frame-hint" class="frame-hint" hidden>Some sites block previews. If this area stays blank, <a id="hint-external" href="#" target="_blank" rel="noopener noreferrer">open the website in a new tab</a>.</div></div>
+        <div class="preview-area"><iframe id="preview" title="Selected website preview" referrerpolicy="no-referrer"></iframe><div id="preview-overlay" class="preview-overlay"><div class="empty-icon" aria-hidden="true">◎</div><h2>Your validation workspace</h2><p>Import domains to start reviewing websites.</p><button id="empty-import" class="primary-button">Import domains</button></div><div id="frame-hint" class="frame-hint" hidden>Seeing “refused to connect”? The site may block previews. <a id="hint-external" href="#" target="_blank" rel="noopener noreferrer">Open it in a new tab ↗</a></div></div>
       </main>
 
       <div id="right-resizer" class="resizer" role="separator" aria-label="Resize validation panel" aria-orientation="vertical" tabindex="0"></div>
