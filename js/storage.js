@@ -1,4 +1,4 @@
-import { LABELS, isReviewed } from './validation.js';
+import { LABELS, isReviewed, normalizeLabel } from './validation.js';
 import { normalizeDomain } from './domainManager.js';
 
 export const STORAGE_KEY = 'domain-validator.session.v1';
@@ -22,11 +22,12 @@ export function validateSession(data) {
   if (data.domains.length > 100000) throw Error('Backup contains too many records');
   const ids = new Set();
   const domains = data.domains.map((record, index) => {
-    if (!record || typeof record !== 'object' || typeof record.id !== 'string' || !record.id || ids.has(record.id) || typeof record.input !== 'string' || typeof record.url !== 'string' || typeof record.hostname !== 'string' || typeof record.comment !== 'string' || record.comment.length > 100000 || typeof record.visited !== 'boolean' || !['', ...LABELS].includes(record.label)) throw Error(`Invalid record at position ${index + 1}`);
+    const label = normalizeLabel(record?.label);
+    if (!record || typeof record !== 'object' || typeof record.id !== 'string' || !record.id || ids.has(record.id) || typeof record.input !== 'string' || typeof record.url !== 'string' || typeof record.hostname !== 'string' || typeof record.comment !== 'string' || record.comment.length > 100000 || typeof record.visited !== 'boolean' || !['', ...LABELS].includes(label)) throw Error(`Invalid record at position ${index + 1}`);
     ids.add(record.id);
     const parsed = normalizeDomain(record.url);
     if (!parsed || parsed.hostname !== record.hostname) throw Error(`Invalid URL at position ${index + 1}`);
-    const clean = { id: record.id, input: record.input, hostname: record.hostname, url: parsed.url, visited: record.visited, lastVisited: typeof record.lastVisited === 'string' ? record.lastVisited : null, label: record.label, comment: record.comment, reviewed: false };
+    const clean = { id: record.id, input: record.input, hostname: record.hostname, url: parsed.url, visited: record.visited, lastVisited: typeof record.lastVisited === 'string' ? record.lastVisited : null, label, comment: record.comment, reviewed: false };
     clean.reviewed = isReviewed(clean);
     return clean;
   });

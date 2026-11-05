@@ -28,13 +28,13 @@ test('detects duplicates within a batch and against existing records', () => {
 test('review status and statistics distinguish visited, relevant, and reviewed', () => {
   const records = [
     { visited: true, label: 'Relevant', comment: '' },
-    { visited: true, label: 'Partially relevant', comment: '' },
+    { visited: true, label: 'Partial', comment: '' },
     { visited: false, label: 'Other', comment: 'Needs follow-up' },
     { visited: true, label: '', comment: 'A note' }
   ];
   assert.deepEqual(records.map(isReviewed), [true, false, true, false]);
   assert.deepEqual(statistics(records), { total: 4, visited: 3, unvisited: 1, relevant: 1, reviewed: 2, pending: 2 });
-  for (const label of ['Partially relevant','Site not reachable','Sign-in required','Site does not exist','Other']) assert.equal(isReviewed({ label, comment: ' ' }), false);
+  for (const label of ['Partial','Site not reachable','Sign-in required','Site does not exist','Other']) assert.equal(isReviewed({ label, comment: ' ' }), false);
 });
 
 test('CSV and TSV retain order and escape quotes, tabs, and line breaks', () => {
@@ -54,6 +54,18 @@ test('storage round-trip, corrupted JSON, and backup validation', () => {
   assert.throws(() => validateSession({ ...session, version: 99 }), /Unsupported/);
   assert.throws(() => validateSession({ ...session, domains: [{ ...session.domains[0], url: 'javascript:alert(1)' }] }), /Invalid URL/);
   delete globalThis.localStorage;
+});
+
+test('older Partial labels migrate without losing review data', () => {
+  const session = emptySession();
+  const base = { id: 'legacy', input: 'legacy.com', hostname: 'legacy.com', url: 'https://legacy.com/', visited: true, lastVisited: null, comment: 'Useful but incomplete', reviewed: true };
+  for (const oldLabel of ['Partially relevant', 'Partially relavant', 'Partially']) {
+    const migrated = validateSession({ ...session, domains: [{ ...base, label: oldLabel }] });
+    assert.equal(migrated.domains[0].label, 'Partial');
+    assert.equal(migrated.domains[0].comment, base.comment);
+    assert.equal(migrated.domains[0].reviewed, true);
+    assert.match(toCSV(migrated.domains), /legacy.com,Partial,Useful but incomplete/);
+  }
 });
 
 test('handles a thousand records without changing order or review counts', () => {

@@ -1,4 +1,6 @@
-export function rowsForExport(domains) { return [['Domain', 'Label', 'Comment'], ...domains.map(d => [d.hostname, d.label, d.comment])]; }
+import { normalizeLabel } from './validation.js';
+
+export function rowsForExport(domains) { return [['Domain', 'Label', 'Comment'], ...domains.map(d => [d.hostname, normalizeLabel(d.label), d.comment])]; }
 export function toTSV(domains, includeHeader = true) { const rows = rowsForExport(domains); return (includeHeader ? rows : rows.slice(1)).map(row => row.map(tsvCell).join('\t')).join('\r\n'); }
 function tsvCell(value) { const string = String(value); return /[\t\r\n"]/.test(string) ? `"${string.replaceAll('"', '""')}"` : string; }
 export function toCSV(domains) { return '\ufeff' + rowsForExport(domains).map(row => row.map(csvCell).join(',')).join('\r\n'); }

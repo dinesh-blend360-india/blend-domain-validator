@@ -196,7 +196,7 @@ function updateCurrentReview() {
   const saved = persist(); renderStats(); updateValidationState(); updateJumpStatus();
   const selected = elements.domain_list.querySelector('.active');
   if (selected) { let check = selected.querySelector('.review-check'); if (record.reviewed && !check) { check = document.createElement('span'); check.className = 'review-check'; check.textContent = '✓'; check.setAttribute('aria-label','Reviewed'); selected.append(check); } else if (!record.reviewed) check?.remove(); selected.setAttribute('aria-label', `${currentIndex()+1}: ${record.hostname}, visited, ${record.reviewed ? 'reviewed' : 'not reviewed'}`); }
-  if (['reviewed','unreviewed','Relevant','Partially relevant','Site not reachable','Sign-in required','Site does not exist','Other'].includes(elements.filter.value)) renderList();
+  if (['reviewed','unreviewed','Relevant','Partial','Site not reachable','Sign-in required','Site does not exist','Other'].includes(elements.filter.value)) renderList();
   return saved;
 }
 elements.label.addEventListener('change', () => { updateCurrentReview(); setMessage(elements.validation_message, ''); });
