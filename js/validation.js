@@ -1,7 +1,11 @@
-export const LABELS = ['Relevant', 'Partial', 'Site not reachable', 'Sign-in required', 'Site does not exist', 'Other'];
-export function normalizeLabel(label) { return ['Partially relevant', 'Partially relavant', 'Partially'].includes(label) ? 'Partial' : label; }
-export function requiresComment(label) { return Boolean(label) && label !== 'Relevant'; }
-export function isReviewed(record) { const label = normalizeLabel(record.label); return LABELS.includes(label) && (!requiresComment(label) || Boolean(record.comment.trim())); }
+export const LABELS = ['Relevant', 'Partial', 'Not relevant', 'Sign in required', 'Site not reachable'];
+export const LEGACY_LABELS = ['Site does not exist', 'Other'];
+export function normalizeLabel(label) {
+  if (['Partially relevant', 'Partially relavant', 'Partially'].includes(label)) return 'Partial';
+  if (label === 'Sign-in required') return 'Sign in required';
+  return label;
+}
+export function isReviewed(record) { return record.reviewed !== false && [...LABELS, ...LEGACY_LABELS].includes(normalizeLabel(record.label)); }
 export function statistics(domains) {
   const total = domains.length;
   const visited = domains.reduce((n, d) => n + Number(d.visited), 0);

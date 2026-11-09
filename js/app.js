@@ -1,11 +1,11 @@
 import { prepareImport, createRecord } from './domainManager.js';
-import { isReviewed, requiresComment, statistics } from './validation.js';
+import { isReviewed, statistics } from './validation.js';
 import { emptySession, loadSession, saveSession, clearSession, validateSession } from './storage.js';
 import { toTSV, toCSV, downloadText, datedFilename } from './export.js';
 import { renderResults } from './results.js';
 
 const $ = id => document.getElementById(id);
-const elements = Object.fromEntries(['workspace','left-panel','right-panel','left-toggle','right-toggle','domains-toggle','left-resizer','right-resizer','previous','next','position','jump','stat-total','stat-visited','stat-unvisited','stat-relevant','stat-reviewed','view-results','results-dialog','results-summary','results-body','results-copy-header','results-copy-no-header','results-download','results-close','results-close-icon','fullscreen','domain-input','keep-duplicates','append','replace','import-message','list-count','search','filter','domain-list','copy','csv','backup','restore','restore-file','reset','address-text','open-external','hint-external','load-status','preview','preview-overlay','frame-hint','empty-import','import-details','current-domain','review-badge','label','comment','required-marker','comment-optional','comment-help','save-status','save-review','validation-message','confirm-dialog','dialog-title','dialog-message','dialog-confirm','dialog-cancel','toast'].map(id => [id.replaceAll('-', '_'), $(id)]));
+const elements = Object.fromEntries(['workspace','left-panel','right-panel','left-toggle','right-toggle','domains-toggle','left-resizer','right-resizer','previous','next','position','jump','stat-total','stat-visited','stat-unvisited','stat-relevant','stat-reviewed','view-results','results-dialog','results-summary','results-body','results-copy-header','results-copy-no-header','results-download','results-close','results-close-icon','fullscreen','domain-input','keep-duplicates','append','replace','import-message','list-count','search','filter','domain-list','copy','csv','backup','restore','restore-file','reset','address-text','open-external','hint-external','load-status','preview','preview-overlay','frame-hint','empty-import','import-details','current-domain','review-badge','source-details','source-label','source-comment','source-tier1','source-tier2','label','comment','required-marker','comment-optional','comment-help','save-status','save-review','validation-message','confirm-dialog','dialog-title','dialog-message','dialog-confirm','dialog-cancel','toast'].map(id => [id.replaceAll('-', '_'), $(id)]));
 const stored = loadSession();
 let session = stored.session;
 let locked = Boolean(stored.corrupt);
@@ -124,17 +124,21 @@ function renderValidation() {
   const record = current();
   elements.current_domain.textContent = record?.hostname ?? 'No domain selected';
   elements.label.disabled = elements.comment.disabled = elements.save_review.disabled = !record || locked;
+  const source = record?.source;
+  elements.source_details.hidden = !source;
+  for (const [key, value] of [['label', source?.label], ['comment', source?.comment], ['tier1', source?.tier1], ['tier2', source?.tier2]]) elements[`source_${key}`].textContent = value || '—';
+  elements.label.querySelector('option[data-legacy]')?.remove();
+  if (record?.label && ![...elements.label.options].some(option => option.value === record.label)) { const option = document.createElement('option'); option.value = record.label; option.textContent = `${record.label} (older review)`; option.dataset.legacy = 'true'; elements.label.append(option); }
   elements.label.value = record?.label ?? ''; elements.comment.value = record?.comment ?? '';
   updateValidationState();
 }
 function updateValidationState() {
-  const record = current(), required = requiresComment(record?.label);
-  elements.required_marker.hidden = !required; elements.comment_optional.textContent = required ? 'Required for this label' : 'Optional for Relevant';
-  const missing = required && !record.comment.trim();
-  elements.comment.classList.toggle('invalid', Boolean(missing)); elements.comment.setAttribute('aria-invalid', String(Boolean(missing)));
-  elements.comment_help.textContent = !record ? 'Choose a domain to begin.' : missing ? 'A comment is required to complete this review.' : required ? 'Your comment completes this review.' : 'Comments are optional for Relevant.';
+  const record = current();
+  elements.required_marker.hidden = true; elements.comment_optional.textContent = 'Optional';
+  elements.comment.classList.remove('invalid'); elements.comment.setAttribute('aria-invalid', 'false');
+  elements.comment_help.textContent = record ? 'Leave blank if you have no review comment.' : 'Choose a domain to begin.';
   elements.review_badge.className = `review-badge${record ? isReviewed(record) ? ' reviewed' : ' pending' : ''}`;
-  elements.review_badge.textContent = !record ? 'Awaiting import' : isReviewed(record) ? '✓ Reviewed' : record.label ? 'Needs comment' : record.visited ? 'Visited · not reviewed' : 'Not reviewed';
+  elements.review_badge.textContent = !record ? 'Awaiting import' : isReviewed(record) ? '✓ Reviewed' : 'Not reviewed';
 }
 function renderNavigation() { const index = currentIndex(), total = session.domains.length; elements.position.textContent = `${index < 0 ? 0 : index + 1} / ${total}`; elements.previous.disabled = index <= 0; elements.next.disabled = index < 0 || index >= total - 1; updateJumpStatus(); }
 function browse(record) {
@@ -192,16 +196,16 @@ elements.empty_import.addEventListener('click', () => { if (!session.ui.leftOpen
 
 function updateCurrentReview() {
   const record = current(); if (!record || locked) return false;
-  record.label = elements.label.value; record.comment = elements.comment.value; record.reviewed = isReviewed(record);
+  record.label = elements.label.value; record.comment = elements.comment.value; record.reviewed = Boolean(record.label);
   const saved = persist(); renderStats(); updateValidationState(); updateJumpStatus();
   const selected = elements.domain_list.querySelector('.active');
   if (selected) { let check = selected.querySelector('.review-check'); if (record.reviewed && !check) { check = document.createElement('span'); check.className = 'review-check'; check.textContent = '✓'; check.setAttribute('aria-label','Reviewed'); selected.append(check); } else if (!record.reviewed) check?.remove(); selected.setAttribute('aria-label', `${currentIndex()+1}: ${record.hostname}, visited, ${record.reviewed ? 'reviewed' : 'not reviewed'}`); }
-  if (['reviewed','unreviewed','Relevant','Partial','Site not reachable','Sign-in required','Site does not exist','Other'].includes(elements.filter.value)) renderList();
+  if (['reviewed','unreviewed','Relevant','Partial','Not relevant','Sign in required','Site not reachable'].includes(elements.filter.value)) renderList();
   return saved;
 }
 elements.label.addEventListener('change', () => { updateCurrentReview(); setMessage(elements.validation_message, ''); });
 elements.comment.addEventListener('input', () => { updateCurrentReview(); setMessage(elements.validation_message, ''); });
-function saveReview() { const record = current(); if (!record || locked) return; const saved = updateCurrentReview(); if (!saved) { setMessage(elements.validation_message, 'Save failed. Export a backup to protect this review.', 'error'); return; } if (isReviewed(record)) { setMessage(elements.validation_message, 'Review complete and saved.', 'success'); showToast('Review saved.'); } else { setMessage(elements.validation_message, record.label ? 'Add a comment to complete this review.' : 'Select a validation label to complete this review.', 'error'); if (record.label) elements.comment.focus(); else elements.label.focus(); } }
+function saveReview() { const record = current(); if (!record || locked) return; const saved = updateCurrentReview(); if (!saved) { setMessage(elements.validation_message, 'Save failed. Export a backup to protect this review.', 'error'); return; } if (isReviewed(record)) { setMessage(elements.validation_message, 'Review complete and saved.', 'success'); showToast('Review saved.'); } else { setMessage(elements.validation_message, 'Select a validation label to complete this review.', 'error'); elements.label.focus(); } }
 elements.save_review.addEventListener('click', saveReview);
 
 async function copyResults(includeHeader) { try { await navigator.clipboard.writeText(toTSV(session.domains, includeHeader)); showToast(`Results copied ${includeHeader ? 'with' : 'without'} header.`); } catch { showToast('Clipboard access failed. Use Download CSV instead.'); } }

@@ -16,12 +16,63 @@ export function normalizeDomain(raw) {
 }
 
 export function parseDomainInput(text) {
+  const table = parseTable(text);
+  if (table) return table;
   const entries = String(text).split(/[\r\n,;\t]+/).map(s => s.trim()).filter(Boolean);
   const valid = [], invalid = [];
   for (const entry of entries) {
     const domain = normalizeDomain(entry);
     if (domain) valid.push(domain);
     else invalid.push(entry);
+  }
+  return { valid, invalid };
+}
+
+function splitRow(line, delimiter) {
+  if (delimiter === '|') return line.trim().replace(/^\||\|$/g, '').split('|').map(value => value.trim());
+  return parseDelimitedRows(line, delimiter)[0];
+}
+
+function parseDelimitedRows(text, delimiter) {
+  const rows = [], cells = []; let value = '', quoted = false;
+  const cell = () => { cells.push(value.trim()); value = ''; };
+  const row = () => { cell(); if (cells.some(Boolean)) rows.push(cells.splice(0)); else cells.length = 0; };
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    if (char === '"' && quoted && text[i + 1] === '"') { value += '"'; i++; }
+    else if (char === '"' && (quoted || !value.trim())) quoted = !quoted;
+    else if (char === delimiter && !quoted) cell();
+    else if ((char === '\r' || char === '\n') && !quoted) { if (char === '\r' && text[i + 1] === '\n') i++; row(); }
+    else value += char;
+  }
+  if (value || cells.length) row();
+  return rows;
+}
+
+function parseTable(text) {
+  const lines = String(text).split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  if (lines.length < 2) return null;
+  const first = lines[0];
+  const delimiter = first.includes('\t') ? '\t' : first.startsWith('|') ? '|' : ',';
+  const headings = splitRow(first, delimiter).map(value => value.toLowerCase().replace(/[^a-z0-9]/g, ''));
+  const domainIndex = headings.findIndex(value => ['regdomain', 'domain'].includes(value));
+  if (domainIndex < 0) return null;
+  const index = names => headings.findIndex(value => names.includes(value));
+  const columns = {
+    domain: domainIndex,
+    label: index(['label']),
+    comment: index(['comment']),
+    tier1: index(['iabtier1', 'labtier1']),
+    tier2: index(['iabtier2', 'labtier2'])
+  };
+  const valid = [], invalid = [];
+  const rows = delimiter === '|' ? lines.slice(1).filter(line => !/^\|?[\s:|-]+\|?$/.test(line)).map(line => splitRow(line, delimiter)) : parseDelimitedRows(text, delimiter).slice(1);
+  for (const cells of rows) {
+    const raw = cells[columns.domain] ?? '';
+    const domain = normalizeDomain(raw);
+    if (!domain) { invalid.push(raw || '(empty domain)'); continue; }
+    const get = column => column < 0 ? '' : cells[column] ?? '';
+    valid.push({ ...domain, source: { label: get(columns.label), comment: get(columns.comment), tier1: get(columns.tier1), tier2: get(columns.tier2) } });
   }
   return { valid, invalid };
 }
@@ -41,5 +92,5 @@ export function prepareImport(text, existing = [], keepDuplicates = false) {
 }
 
 export function createRecord(domain) {
-  return { id: crypto.randomUUID(), input: domain.input, hostname: domain.hostname, url: domain.url, visited: false, lastVisited: null, label: '', comment: '', reviewed: false };
+  return { id: crypto.randomUUID(), input: domain.input, hostname: domain.hostname, url: domain.url, source: domain.source ?? null, visited: false, lastVisited: null, label: 'Relevant', comment: '', reviewed: false };
 }

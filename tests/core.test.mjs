@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeDomain, parseDomainInput, prepareImport } from '../js/domainManager.js';
+import { normalizeDomain, parseDomainInput, prepareImport, createRecord } from '../js/domainManager.js';
 import { isReviewed, statistics } from '../js/validation.js';
 import { emptySession, validateSession, saveSession, loadSession, STORAGE_KEY } from '../js/storage.js';
 import { toCSV, toTSV } from '../js/export.js';
@@ -25,6 +25,23 @@ test('detects duplicates within a batch and against existing records', () => {
   assert.equal(retained.duplicates, 2); assert.equal(retained.accepted.length, 3);
 });
 
+test('pasted tables keep source tags separate from review output', () => {
+  const pasted = 'reg_domain\tlabel\tComment\ttraffic_type\tmass_retailer\tdevice_traffic_risk\tlocal\tiab_id\tiab_tier1\tiab_tier2\nexample.com\tExisting label\tExisting note\tignored\tno\tlow\tfalse\t42\tNews\tLocal news\nsecond.com\t\t\tignored\t\t\t\t\tShopping\t';
+  const { accepted, invalid } = prepareImport(pasted);
+  assert.deepEqual(invalid, []);
+  assert.equal(accepted.length, 2);
+  assert.deepEqual(accepted[0].source, { label: 'Existing label', comment: 'Existing note', tier1: 'News', tier2: 'Local news' });
+  const record = createRecord(accepted[0]);
+  assert.equal(record.label, 'Relevant');
+  assert.equal(record.comment, '');
+  assert.equal(isReviewed(record), false);
+  assert.equal(toTSV([record]), 'Domain\tLabel\tComment\r\nexample.com\tRelevant\t');
+  const restored = validateSession({ ...emptySession(), domains: [record] });
+  assert.deepEqual(restored.domains[0].source, record.source);
+  assert.deepEqual(parseDomainInput('| domain | lab_tier1 | lab_tier2 |\n| --- | --- | --- |\n| shop.com | Retail | Apparel |').valid[0].source, { label: '', comment: '', tier1: 'Retail', tier2: 'Apparel' });
+  assert.deepEqual(parseDomainInput('reg_domain,Comment,iab_tier1\nnews.com,"Line one\nLine two, with comma",Media').valid[0].source, { label: '', comment: 'Line one\nLine two, with comma', tier1: 'Media', tier2: '' });
+});
+
 test('review status and statistics distinguish visited, relevant, and reviewed', () => {
   const records = [
     { visited: true, label: 'Relevant', comment: '' },
@@ -32,16 +49,16 @@ test('review status and statistics distinguish visited, relevant, and reviewed',
     { visited: false, label: 'Other', comment: 'Needs follow-up' },
     { visited: true, label: '', comment: 'A note' }
   ];
-  assert.deepEqual(records.map(isReviewed), [true, false, true, false]);
-  assert.deepEqual(statistics(records), { total: 4, visited: 3, unvisited: 1, relevant: 1, reviewed: 2, pending: 2 });
-  for (const label of ['Partial','Site not reachable','Sign-in required','Site does not exist','Other']) assert.equal(isReviewed({ label, comment: ' ' }), false);
+  assert.deepEqual(records.map(isReviewed), [true, true, true, false]);
+  assert.deepEqual(statistics(records), { total: 4, visited: 3, unvisited: 1, relevant: 1, reviewed: 3, pending: 1 });
+  for (const label of ['Partial','Not relevant','Sign in required','Site not reachable']) assert.equal(isReviewed({ label, comment: ' ' }), true);
 });
 
 test('CSV and TSV retain order and escape quotes, tabs, and line breaks', () => {
   const rows = [{ hostname: 'one.com', label: 'Relevant', comment: 'A, "quoted"\nline' }, { hostname: 'two.com', label: '', comment: 'tab\there' }];
-  assert.equal(toCSV(rows), '\ufeffDomain,Label,Comment\r\none.com,Relevant,"A, ""quoted""\nline"\r\ntwo.com,,tab\there');
-  assert.equal(toTSV(rows), 'Domain\tLabel\tComment\r\none.com\tRelevant\t"A, ""quoted""\nline"\r\ntwo.com\t\t"tab\there"');
-  assert.equal(toTSV(rows, false), 'one.com\tRelevant\t"A, ""quoted""\nline"\r\ntwo.com\t\t"tab\there"');
+  assert.equal(toCSV(rows), '\ufeffDomain,Label,Comment\r\none.com,Relevant,"A, ""quoted""\nline"\r\ntwo.com,Relevant,tab\there');
+  assert.equal(toTSV(rows), 'Domain\tLabel\tComment\r\none.com\tRelevant\t"A, ""quoted""\nline"\r\ntwo.com\tRelevant\t"tab\there"');
+  assert.equal(toTSV(rows, false), 'one.com\tRelevant\t"A, ""quoted""\nline"\r\ntwo.com\tRelevant\t"tab\there"');
 });
 
 test('storage round-trip, corrupted JSON, and backup validation', () => {

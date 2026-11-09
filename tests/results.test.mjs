@@ -20,7 +20,7 @@ test('results preview shows all records in import order with three columns', () 
     assert.equal(summary.textContent, '2 domains · 1 reviewed');
     assert.deepEqual(body.children.map(row => row.children.map(cell => cell.textContent)), [
       ['first.example.com', 'Relevant', '<reviewed> yes'],
-      ['second.example.com', '', '']
+      ['second.example.com', 'Relevant', '']
     ]);
   } finally { globalThis.document = previousDocument; }
 });

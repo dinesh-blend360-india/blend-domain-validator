@@ -20,21 +20,20 @@ Open **http://localhost:5500** in current Chrome or Edge. Keep using the same ad
 
 ## Review workflow
 
-1. Open **Import domains** in the left sidebar. Paste hostnames or full HTTP/HTTPS URLs separated by lines, commas, semicolons, or Excel tabs. Click **Append domains** or **Replace list**. Replace asks for confirmation if a session already exists.
+1. Open **Import domains** in the left sidebar. Paste hostnames or full HTTP/HTTPS URLs, or paste a spreadsheet table with a header row. The table can contain `reg_domain` (or `domain`), `label`, `Comment`, `iab_tier1`, and `iab_tier2`; other columns are ignored. Tab-separated, CSV, and Markdown pipe tables are accepted. Click **Append domains** or **Replace list**. Replace asks for confirmation if a session already exists.
 2. Duplicate detection compares hostnames case-insensitively, including against the existing list when appending. Use **Keep duplicate records** to retain them. The import summary reports accepted, duplicate, and invalid entries. Duplicate records remain separate reviews.
 3. Choose a domain from the left list or header menu, or use Previous/Next. The first imported site opens automatically. A visit is recorded when the site is opened or its load is attempted; visiting alone does not mark it reviewed.
-4. Select a validation label on the right. **Relevant** needs no comment. **Partial** and every other non-Relevant label need a nonblank comment to count as reviewed. Older sessions and backups using “Partially relevant” load as “Partial” without losing their comments. Changes save automatically to this browser's Local Storage. The save indicator confirms success or reports failure.
-5. Search and filter the domain list without changing its original order. The header tracks Total, Visited, Not visited, Relevant, and Reviewed. Relevant counts only the exact Relevant label; Reviewed counts completed classifications.
+4. The right panel shows any imported label, comment, and IAB tiers as reference. The review label starts as **Relevant** and can be changed to **Partial**, **Not relevant**, **Sign in required**, or **Site not reachable**. Review comments are optional for every label. A new domain counts as reviewed after you select a label or click **Save review**. Changes save automatically to this browser's Local Storage. Search and filter the domain list without changing its original order.
 
-Click **Results** in the header to preview every Domain, Label, and Comment in import order. The preview has **Copy with header**, **Copy without header**, and **Download CSV** actions. Close it with its Close button, × button, or Escape. Pending records appear with blank label and comment cells.
+Click **Results** in the header to preview every Domain, selected Label, and review Comment in import order. The preview has **Copy with header**, **Copy without header**, and **Download CSV** actions. Close it with its Close button, × button, or Escape. New records export as Relevant with an empty comment until edited.
 
 The blue list item is the current domain. Previously visited domains are green, unvisited ones are grey, and a checkmark indicates a completed review. Both sidebars can collapse or resize independently. The header menu button always opens or closes the domain list; the narrow panel rails also toggle their panels. **Focus view** hides both panels until you exit it. On narrow screens, panels appear as overlays.
 
 ## Results and session safety
 
 - **Copy results** puts a tab-separated table on the clipboard with exactly `Domain`, `Label`, and `Comment` columns. Quoted fields preserve tabs and line breaks for Excel. Clipboard access requires localhost or another secure origin.
-- **Download CSV** exports all records in their import order, including pending records with blank labels or comments. It uses UTF-8 with a BOM and escapes commas, quotes, and line breaks.
-- **Export backup** downloads the full versioned session as JSON, including domain order, visit history, labels, comments, current selection, and panel preferences.
+- **Download CSV** exports all records in their import order with the selected review label and comment. It uses UTF-8 with a BOM and escapes commas, quotes, and line breaks.
+- **Export backup** downloads the full versioned session as JSON, including imported tags, domain order, visit history, review labels and comments, current selection, and panel preferences.
 - **Restore backup** validates the JSON and asks before replacing the current session. It does not execute backup content.
 - **Clear all data** asks before removing the session's domains and reviews. Export a CSV or backup first if you need the work. Panel preferences are retained.
 

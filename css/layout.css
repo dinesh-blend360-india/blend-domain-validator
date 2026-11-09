@@ -13,6 +13,12 @@
   border-radius: 6px;
 }
 
+.source-details { padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: #f6f8fb; font-size: 12px; }
+.source-details[hidden] { display: none; }
+.source-details dl { display: grid; grid-template-columns: 85px minmax(0, 1fr); gap: 7px 10px; margin: 10px 0 0; }
+.source-details dt { color: var(--muted); }
+.source-details dd { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+
 .results-dialog {
   width: min(960px, calc(100vw - 32px));
   height: min(720px, calc(100dvh - 32px));
