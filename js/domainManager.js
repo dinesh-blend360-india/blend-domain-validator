@@ -51,22 +51,20 @@ function parseDelimitedRows(text, delimiter) {
 
 function parseTable(text) {
   const lines = String(text).split(/\r?\n/).map(line => line.trim()).filter(Boolean);
-  if (lines.length < 2) return null;
+  if (!lines.length) return null;
   const first = lines[0];
   const delimiter = first.includes('\t') ? '\t' : first.startsWith('|') ? '|' : ',';
-  const headings = splitRow(first, delimiter).map(value => value.toLowerCase().replace(/[^a-z0-9]/g, ''));
+  const firstCells = splitRow(first, delimiter);
+  const headings = firstCells.map(value => value.toLowerCase().replace(/[^a-z0-9]/g, ''));
   const domainIndex = headings.findIndex(value => ['regdomain', 'domain'].includes(value));
-  if (domainIndex < 0) return null;
+  const headerless = domainIndex < 0 && firstCells.length === 10 && normalizeDomain(firstCells[0]) && !normalizeDomain(firstCells[1]);
+  if (domainIndex < 0 && !headerless) return null;
   const index = names => headings.findIndex(value => names.includes(value));
-  const columns = {
-    domain: domainIndex,
-    label: index(['label']),
-    comment: index(['comment']),
-    tier1: index(['iabtier1', 'labtier1']),
-    tier2: index(['iabtier2', 'labtier2'])
-  };
+  const columns = headerless
+    ? { domain: 0, label: 1, comment: 2, tier1: 8, tier2: 9 }
+    : { domain: domainIndex, label: index(['label']), comment: index(['comment']), tier1: index(['iabtier1', 'labtier1']), tier2: index(['iabtier2', 'labtier2']) };
   const valid = [], invalid = [];
-  const rows = delimiter === '|' ? lines.slice(1).filter(line => !/^\|?[\s:|-]+\|?$/.test(line)).map(line => splitRow(line, delimiter)) : parseDelimitedRows(text, delimiter).slice(1);
+  const rows = delimiter === '|' ? lines.slice(headerless ? 0 : 1).filter(line => !/^\|?[\s:|-]+\|?$/.test(line)).map(line => splitRow(line, delimiter)) : parseDelimitedRows(text, delimiter).slice(headerless ? 0 : 1);
   for (const cells of rows) {
     const raw = cells[columns.domain] ?? '';
     const domain = normalizeDomain(raw);

@@ -37,7 +37,7 @@
             <div class="import-body">
               <label for="domain-input">Paste domains or a spreadsheet table</label>
               <textarea id="domain-input" rows="5" placeholder="example.com&#10;https://www.company.com&#10;another.org"></textarea>
-              <p class="field-hint">Paste domains, or a table with reg_domain, label, Comment, iab_tier1, and iab_tier2 columns. Other columns are ignored.</p>
+              <p class="field-hint">Paste domains or a table. Tables may have headers, or use the ten-column order: domain, label, comment, traffic type, mass retailer, device risk, local, IAB ID, IAB tier 1, IAB tier 2.</p>
               <label class="checkbox-row"><input id="keep-duplicates" type="checkbox"> Keep duplicate records</label>
               <div class="button-row"><button id="append" class="primary-button">Append domains</button><button id="replace" class="secondary-button">Replace list</button></div>
               <p id="import-message" class="message" role="status" aria-live="polite"></p>

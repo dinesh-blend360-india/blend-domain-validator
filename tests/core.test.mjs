@@ -42,6 +42,16 @@ test('pasted tables keep source tags separate from review output', () => {
   assert.deepEqual(parseDomainInput('reg_domain,Comment,iab_tier1\nnews.com,"Line one\nLine two, with comma",Media').valid[0].source, { label: '', comment: 'Line one\nLine two, with comma', tier1: 'Media', tier2: '' });
 });
 
+test('headerless ten-column paste keeps the first domain and IAB tiers', () => {
+  const pasted = '| veo.com            | relevant |   | web | FALSE | FALSE | FALSE | IAB089 | Technology & Computing | Consumer Electronics |\n| ------------------ | -------- | - | --- | ----- | ----- | ----- | ------ | ---------------------- | -------------------- |\n| clicks.tech        | relevant |   | web | FALSE | FALSE | FALSE | IAB089 | Technology & Computing | Consumer Electronics |\n| soundguys.com      | relevant |   | web | FALSE | FALSE | FALSE | IAB089 | Technology & Computing | Consumer Electronics |\n| recellexchange.com | relevant |   | web | FALSE | FALSE | FALSE | IAB089 | Technology & Computing | Consumer Electronics |';
+  const result = prepareImport(pasted);
+  assert.deepEqual(result.invalid, []);
+  assert.deepEqual(result.accepted.map(row => row.hostname), ['veo.com', 'clicks.tech', 'soundguys.com', 'recellexchange.com']);
+  assert.deepEqual(result.accepted[0].source, { label: 'relevant', comment: '', tier1: 'Technology & Computing', tier2: 'Consumer Electronics' });
+  assert.deepEqual(createRecord(result.accepted[0]).source, result.accepted[0].source);
+  assert.deepEqual(parseDomainInput('veo.com\trelevant\t\tweb\tFALSE\tFALSE\tFALSE\tIAB089\tTechnology & Computing\tConsumer Electronics').valid[0].source, result.accepted[0].source);
+});
+
 test('review status and statistics distinguish visited, relevant, and reviewed', () => {
   const records = [
     { visited: true, label: 'Relevant', comment: '' },
