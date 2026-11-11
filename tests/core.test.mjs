@@ -30,16 +30,16 @@ test('pasted tables keep source tags separate from review output', () => {
   const { accepted, invalid } = prepareImport(pasted);
   assert.deepEqual(invalid, []);
   assert.equal(accepted.length, 2);
-  assert.deepEqual(accepted[0].source, { label: 'Existing label', comment: 'Existing note', tier1: 'News', tier2: 'Local news' });
+  assert.deepEqual(accepted[0].source, { label: 'Existing label', newLabel: '', comment: 'Existing note', tier1: 'News', tier2: 'Local news' });
   const record = createRecord(accepted[0]);
-  assert.equal(record.label, 'Relevant');
+  assert.equal(record.label, 'Existing label');
   assert.equal(record.comment, '');
   assert.equal(isReviewed(record), false);
-  assert.equal(toTSV([record]), 'Domain\tLabel\tComment\r\nexample.com\tRelevant\t');
+  assert.equal(toTSV([record]), 'reg_domain\told_label\tnew_label\tcomment\r\nexample.com\tExisting label\tExisting label\t');
   const restored = validateSession({ ...emptySession(), domains: [record] });
   assert.deepEqual(restored.domains[0].source, record.source);
-  assert.deepEqual(parseDomainInput('| domain | lab_tier1 | lab_tier2 |\n| --- | --- | --- |\n| shop.com | Retail | Apparel |').valid[0].source, { label: '', comment: '', tier1: 'Retail', tier2: 'Apparel' });
-  assert.deepEqual(parseDomainInput('reg_domain,Comment,iab_tier1\nnews.com,"Line one\nLine two, with comma",Media').valid[0].source, { label: '', comment: 'Line one\nLine two, with comma', tier1: 'Media', tier2: '' });
+  assert.deepEqual(parseDomainInput('| domain | lab_tier1 | lab_tier2 |\n| --- | --- | --- |\n| shop.com | Retail | Apparel |').valid[0].source, { label: '', newLabel: '', comment: '', tier1: 'Retail', tier2: 'Apparel' });
+  assert.deepEqual(parseDomainInput('reg_domain,Comment,iab_tier1\nnews.com,"Line one\nLine two, with comma",Media').valid[0].source, { label: '', newLabel: '', comment: 'Line one\nLine two, with comma', tier1: 'Media', tier2: '' });
 });
 
 test('headerless ten-column paste keeps the first domain and IAB tiers', () => {
@@ -47,9 +47,24 @@ test('headerless ten-column paste keeps the first domain and IAB tiers', () => {
   const result = prepareImport(pasted);
   assert.deepEqual(result.invalid, []);
   assert.deepEqual(result.accepted.map(row => row.hostname), ['veo.com', 'clicks.tech', 'soundguys.com', 'recellexchange.com']);
-  assert.deepEqual(result.accepted[0].source, { label: 'relevant', comment: '', tier1: 'Technology & Computing', tier2: 'Consumer Electronics' });
+  assert.deepEqual(result.accepted[0].source, { label: 'relevant', newLabel: '', comment: '', tier1: 'Technology & Computing', tier2: 'Consumer Electronics' });
   assert.deepEqual(createRecord(result.accepted[0]).source, result.accepted[0].source);
   assert.deepEqual(parseDomainInput('veo.com\trelevant\t\tweb\tFALSE\tFALSE\tFALSE\tIAB089\tTechnology & Computing\tConsumer Electronics').valid[0].source, result.accepted[0].source);
+});
+
+test('old label stays unchanged while new label defaults or uses pasted value', () => {
+  const pasted = 'reg_domain\told_label\tnew_label\tComment\ttraffic_type\tmass_retailer\tdevice_traffic_risk\tlocal\tiab_id\tiab_tier1\tiab_tier2\nveo.com\trelevant\t\t\tweb\tFALSE\tFALSE\tFALSE\tIAB089\tTechnology & Computing\tConsumer Electronics\nclicks.tech\tpartial\tNot relevant\t\tweb\tFALSE\tFALSE\tFALSE\tIAB089\tTechnology & Computing\tConsumer Electronics';
+  const records = prepareImport(pasted).accepted.map(createRecord);
+  assert.equal(records[0].source.label, 'relevant');
+  assert.equal(records[0].source.newLabel, '');
+  assert.equal(records[0].label, 'Relevant');
+  assert.equal(records[1].source.label, 'partial');
+  assert.equal(records[1].label, 'Not relevant');
+  records[0].label = 'Partial';
+  assert.equal(toTSV(records), 'reg_domain\told_label\tnew_label\tcomment\r\nveo.com\trelevant\tPartial\t\r\nclicks.tech\tpartial\tNot relevant\t');
+  assert.deepEqual(validateSession({ ...emptySession(), domains: records }).domains.map(row => row.source.label), ['relevant', 'partial']);
+  const headerless = '| veo.com | relevant | | | web | FALSE | FALSE | FALSE | IAB089 | Technology & Computing | Consumer Electronics |';
+  assert.deepEqual(parseDomainInput(headerless).valid[0].source, { label: 'relevant', newLabel: '', comment: '', tier1: 'Technology & Computing', tier2: 'Consumer Electronics' });
 });
 
 test('review status and statistics distinguish visited, relevant, and reviewed', () => {
@@ -66,9 +81,9 @@ test('review status and statistics distinguish visited, relevant, and reviewed',
 
 test('CSV and TSV retain order and escape quotes, tabs, and line breaks', () => {
   const rows = [{ hostname: 'one.com', label: 'Relevant', comment: 'A, "quoted"\nline' }, { hostname: 'two.com', label: '', comment: 'tab\there' }];
-  assert.equal(toCSV(rows), '\ufeffDomain,Label,Comment\r\none.com,Relevant,"A, ""quoted""\nline"\r\ntwo.com,Relevant,tab\there');
-  assert.equal(toTSV(rows), 'Domain\tLabel\tComment\r\none.com\tRelevant\t"A, ""quoted""\nline"\r\ntwo.com\tRelevant\t"tab\there"');
-  assert.equal(toTSV(rows, false), 'one.com\tRelevant\t"A, ""quoted""\nline"\r\ntwo.com\tRelevant\t"tab\there"');
+  assert.equal(toCSV(rows), '\ufeffreg_domain,old_label,new_label,comment\r\none.com,,Relevant,"A, ""quoted""\nline"\r\ntwo.com,,Relevant,tab\there');
+  assert.equal(toTSV(rows), 'reg_domain\told_label\tnew_label\tcomment\r\none.com\t\tRelevant\t"A, ""quoted""\nline"\r\ntwo.com\t\tRelevant\t"tab\there"');
+  assert.equal(toTSV(rows, false), 'one.com\t\tRelevant\t"A, ""quoted""\nline"\r\ntwo.com\t\tRelevant\t"tab\there"');
 });
 
 test('storage round-trip, corrupted JSON, and backup validation', () => {
@@ -91,7 +106,7 @@ test('older Partial labels migrate without losing review data', () => {
     assert.equal(migrated.domains[0].label, 'Partial');
     assert.equal(migrated.domains[0].comment, base.comment);
     assert.equal(migrated.domains[0].reviewed, true);
-    assert.match(toCSV(migrated.domains), /legacy.com,Partial,Useful but incomplete/);
+    assert.match(toCSV(migrated.domains), /legacy.com,,Partial,Useful but incomplete/);
   }
 });
 

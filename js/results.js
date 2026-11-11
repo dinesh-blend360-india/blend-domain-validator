@@ -8,7 +8,7 @@ export function renderResults(domains, body, summary) {
   if (!total) {
     const row = document.createElement('tr');
     const cell = document.createElement('td');
-    cell.colSpan = 3;
+    cell.colSpan = 4;
     cell.className = 'results-empty';
     cell.textContent = 'No results yet. Import domains to begin.';
     row.append(cell);

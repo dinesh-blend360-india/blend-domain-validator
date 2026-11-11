@@ -1,3 +1,5 @@
+import { normalizeLabel } from './validation.js';
+
 export function normalizeDomain(raw) {
   const input = String(raw ?? '').trim().replace(/^["'“”]+|["'“”]+$/g, '').trim();
   if (!input || /\s/.test(input)) return null;
@@ -57,12 +59,12 @@ function parseTable(text) {
   const firstCells = splitRow(first, delimiter);
   const headings = firstCells.map(value => value.toLowerCase().replace(/[^a-z0-9]/g, ''));
   const domainIndex = headings.findIndex(value => ['regdomain', 'domain'].includes(value));
-  const headerless = domainIndex < 0 && firstCells.length === 10 && normalizeDomain(firstCells[0]) && !normalizeDomain(firstCells[1]);
+  const headerless = domainIndex < 0 && [10, 11].includes(firstCells.length) && normalizeDomain(firstCells[0]) && !normalizeDomain(firstCells[1]);
   if (domainIndex < 0 && !headerless) return null;
   const index = names => headings.findIndex(value => names.includes(value));
   const columns = headerless
-    ? { domain: 0, label: 1, comment: 2, tier1: 8, tier2: 9 }
-    : { domain: domainIndex, label: index(['label']), comment: index(['comment']), tier1: index(['iabtier1', 'labtier1']), tier2: index(['iabtier2', 'labtier2']) };
+    ? { domain: 0, label: 1, newLabel: firstCells.length === 11 ? 2 : -1, comment: firstCells.length === 11 ? 3 : 2, tier1: firstCells.length - 2, tier2: firstCells.length - 1 }
+    : { domain: domainIndex, label: index(['oldlabel', 'label']), newLabel: index(['newlabel']), comment: index(['comment']), tier1: index(['iabtier1', 'labtier1']), tier2: index(['iabtier2', 'labtier2']) };
   const valid = [], invalid = [];
   const rows = delimiter === '|' ? lines.slice(headerless ? 0 : 1).filter(line => !/^\|?[\s:|-]+\|?$/.test(line)).map(line => splitRow(line, delimiter)) : parseDelimitedRows(text, delimiter).slice(headerless ? 0 : 1);
   for (const cells of rows) {
@@ -70,7 +72,7 @@ function parseTable(text) {
     const domain = normalizeDomain(raw);
     if (!domain) { invalid.push(raw || '(empty domain)'); continue; }
     const get = column => column < 0 ? '' : cells[column] ?? '';
-    valid.push({ ...domain, source: { label: get(columns.label), comment: get(columns.comment), tier1: get(columns.tier1), tier2: get(columns.tier2) } });
+    valid.push({ ...domain, source: { label: get(columns.label), newLabel: get(columns.newLabel), comment: get(columns.comment), tier1: get(columns.tier1), tier2: get(columns.tier2) } });
   }
   return { valid, invalid };
 }
@@ -90,5 +92,5 @@ export function prepareImport(text, existing = [], keepDuplicates = false) {
 }
 
 export function createRecord(domain) {
-  return { id: crypto.randomUUID(), input: domain.input, hostname: domain.hostname, url: domain.url, source: domain.source ?? null, visited: false, lastVisited: null, label: 'Relevant', comment: '', reviewed: false };
+  return { id: crypto.randomUUID(), input: domain.input, hostname: domain.hostname, url: domain.url, source: domain.source ?? null, visited: false, lastVisited: null, label: normalizeLabel(domain.source?.newLabel || domain.source?.label || 'Relevant'), comment: '', reviewed: false };
 }

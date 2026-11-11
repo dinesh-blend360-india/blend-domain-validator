@@ -37,8 +37,9 @@
 .results-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px; }
 .results-table th, .results-table td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; white-space: pre-wrap; }
 .results-table th { position: sticky; top: 0; background: #f6f8fb; z-index: 1; font-weight: 700; }
-.results-table th:nth-child(1) { width: 28%; }
-.results-table th:nth-child(2) { width: 22%; }
+.results-table th:nth-child(1) { width: 25%; }
+.results-table th:nth-child(2) { width: 20%; }
+.results-table th:nth-child(3) { width: 20%; }
 .results-table tr:nth-child(even) td { background: #fafbfd; }
 .results-empty { color: var(--muted); text-align: center !important; padding: 36px 14px !important; }
 
@@ -50,6 +51,7 @@
 @media (max-width: 600px) {
   .results-heading, .results-actions { padding: 12px; }
   .results-table th, .results-table td { padding: 8px; font-size: 11px; }
-  .results-table th:nth-child(1) { width: 34%; }
-  .results-table th:nth-child(2) { width: 25%; }
+  .results-table th:nth-child(1) { width: 28%; }
+  .results-table th:nth-child(2) { width: 22%; }
+  .results-table th:nth-child(3) { width: 22%; }
 }
